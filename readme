@@ -1,0 +1,25 @@
+A. tech Need :
+    html
+    css
+    bootstrap
+    flask
+    python
+    mongodb
+
+B. What We Build
+    Aplikasi management obat apotik
+
+C. Step
+    1. Feature
+        a. insert, update, delete, read Database
+    2. Page
+        a. Login
+        b. Home
+        c. Obat Keluar
+        d. obat masuk
+        e. obat yang ada di apotik
+
+D. Database Structure
+    1. Tabel Stok Obat
+    2. Tabel Obat masuk
+    3. Tabel Obat Keluar

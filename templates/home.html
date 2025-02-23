@@ -1,0 +1,195 @@
+{% extends "base/utama.html" %} {% block content %}
+<h3 style="margin-top: 20px">Masukkan Obat Baru</h3>
+<form style="width: 50%" method="post" action="{{url_for('addObat')}}">
+  <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label"
+      >Masukkan Obat Baru</label
+    >
+    <input
+      type="text"
+      class="form-control"
+      id="exampleInputEmail1"
+      aria-describedby="emailHelp"
+      name="namaObat"
+    />
+    <label for="exampleInputEmail1" class="form-label">Masukkan Satuan</label>
+    <input
+      type="text"
+      class="form-control"
+      id="exampleInputEmail1"
+      aria-describedby="emailHelp"
+      name="satuan"
+    />
+    <label for="exampleInputEmail1" class="form-label">Masukkan Harga</label>
+    <input
+      type="text"
+      class="form-control"
+      id="exampleInputEmail1"
+      aria-describedby="emailHelp"
+      name="harga"
+    />
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% if obat_list %}
+<table class="table" style="font-size: 10px; margin-top: 20px">
+  <thead>
+    <tr>
+      <th scope="col">No</th>
+      <th scope="col">Nama Obat</th>
+      <th scope="col">Satuan</th>
+      <th scope="col">Harga</th>
+      <th scope="col">Karu Stok</th>
+      <th scope="col">Action</th>
+    </tr>
+  </thead>
+  <tbody class="table-group-divider">
+    {% for obat in obat_list %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{obat.nama}}</td>
+      <td>{{obat.satuan}}</td>
+      <td>{{obat.harga}}</td>
+      <td>
+        <a class="btn btn-primary" href="/kartuStok/{{obat._id}}" role="button"
+          >Link</a
+        >
+      </td>
+      <td>
+        <!-- Button trigger modal -->
+        <button
+  type="button"
+  class="btn btn-primary"
+  data-bs-toggle="modal"
+  data-bs-target="#modal{{ obat._id }}"
+>
+  Update
+</button>
+
+        <!-- Modal -->
+        <div
+        class="modal fade"
+        id="modal{{ obat._id }}"
+        tabindex="-1"
+        aria-labelledby="modalLabel{{ obat._id }}"
+        aria-hidden="true"
+      >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                  Modal title
+                </h1>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form action="{{url_for('updateObat', obatId = obat._id)}}" method="post">
+                  <label for="exampleInputEmail1" class="form-label"
+                    >Masukkan Obat Baru</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    name="namaObat"
+                    value="{{obat.nama}}"
+                  />
+                  <label for="exampleInputEmail1" class="form-label"
+                    >Masukkan Satuan</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    name="satuan"
+                    value="{{obat.satuan}}"
+                  />
+                  <label for="exampleInputEmail1" class="form-label"
+                    >Masukkan Harga</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    name="harga"
+                    value="{{obat.harga}}"
+                  />
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Save changes
+                </button>
+              </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-danger"
+          style="border: none; color: black; font-weight: 500"
+          onclick="update('{{obat._id}}')"
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div style="display: flex; justify-content: center; align-items: center">
+  <dotlottie-player
+    src="https://lottie.host/49d7f273-b06e-4e88-bac2-3b6012838e9b/mc4g5jJ9qp.lottie"
+    background="transparent"
+    speed="1"
+    style="width: 300px; height: 300px"
+    loop
+    autoplay
+    ><p>Obat</p></dotlottie-player
+  >
+  <h5 style="margin-top: 40px; margin-right: 80px">Obat Kosong</h5>
+</div>
+{% endif %}
+<script>
+  function update(obatId) {
+    obatId = obatId;
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: "Deleted!",
+          text: "Your file has been deleted.",
+          icon: "success",
+        });
+        window.location.href = "{{url_for('deleteObat', id='idBRG')}}".replace(
+          "idBRG",
+          obatId
+        );
+      }
+    });
+  }
+</script>
+{% endblock %}

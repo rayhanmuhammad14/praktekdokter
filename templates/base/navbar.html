@@ -1,0 +1,54 @@
+{% block content %}
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" style="border-bottom: 1px solid rgba(153, 255, 0, 0.488)">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Dzilmi Farma</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/home">Home</a>
+              </li>
+            </ul>
+            <form class="d-flex" role="search" action="{{url_for('home')}}" method="get">
+              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="search" value="{{ request.args.get('search', '') }}">
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+            <div style="margin-left: 10px;">
+              <button
+              type="button"
+              class="btn btn-danger"
+              style="border: none; color: black; font-weight: 500"
+              onclick="logout()"
+            >
+              Logout
+            </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+      </style>
+      <script>
+        function logout(){
+            Swal.fire({
+        title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Iya Logout"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: "Oke",
+          text: "See You",
+          icon: "success"
+        });
+        window.location.href = "/";
+      }
+    });
+        }
+      </script>
+{% endblock %}

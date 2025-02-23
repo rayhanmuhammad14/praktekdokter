@@ -1,0 +1,173 @@
+{% extends "base/utama.html" %}
+{% block content %}
+{% for obat in data_obat %}
+<h5 style="margin-top: 20px;">Nama Obat : {{obat.nama}}</h4>
+<h5>Satuan    : {{obat.satuan}}</h4>
+<h5>Harga     : {{obat.harga}}</h4>
+{% endfor %}
+<h5>Total Stok : {{stok_terakhir}}</h5>
+
+<div class="formContainer" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+    <form style="width: 50%; margin-top: 20px; border: 1px solid rgba(153, 255, 0, 0.488); padding: 10px; border-radius: 8px;" method="post" action="{{url_for('addKartuStok', obat_id=idBrg)}}">
+        <h5>Masukkan Data Obat Masuk Atau Keluar</h5>
+          <div class="input-group input-group-sm mb-3">
+            <span class="input-group-text" id="inputGroup-sizing-sm">tanggal</span>
+            <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="tanggal" required>
+          </div>
+        <div class="mb-3">
+          <label for="exampleInputPassword1" class="form-label">Dari / Kepada</label>
+          <input type="text" class="form-control" id="exampleInputPassword1" name="dk">
+        </div>
+        <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label">Masuk</label>
+            <input type="number" class="form-control" id="exampleInputPassword1" name="masuk" required>
+          </div>
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label">Keluar</label>
+            <input type="number" class="form-control" id="exampleInputPassword1" name="keluar" required>
+          </div>
+          <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label">Sisa</label>
+            <input type="number" class="form-control" id="exampleInputPassword1" name="sisa" required>
+          </div>
+          <div class="input-group input-group-sm mb-3">
+            <span class="input-group-text" id="inputGroup-sizing-sm">Expire Date</span>
+            <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="expire" required>
+          </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+</div>
+{% if dataKartu %}
+  <table class="table" style="font-size: 10px; margin-top: 20px;">
+    <thead>
+      <tr>
+        <th scope="col">No</th>
+        <th scope="col">Tanggal</th>
+        <th scope="col">Dari/Kepada</th>
+        <th scope="col">Masuk</th>
+        <th scope="col">Keluar</th>
+        <th scope="col">Sisa</th>  
+        <th scope="col">Expire Date</th>
+        <th scope="col">Expire Dalam ... hari</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody class="table-group-divider">
+      {% for kartu in dataKartu %}
+      <tr>
+        <td>{{loop.index}}</td>
+        <td>{{kartu.tanggal}}</td>
+        <td>{{kartu.dk}}</td>
+        <td>{{kartu.masuk}}</td>
+        <td>{{kartu.keluar}}</td>
+        <td>{{kartu.sisa}}</td>
+        <td>{{kartu.expire}}</td>
+        <td>{{kartu.selisih}}</td>
+        <td>
+          <button
+  type="button"
+  class="btn btn-primary"
+  data-bs-toggle="modal"
+  data-bs-target="#modal{{ kartu._id }}"
+>
+  Update
+</button>
+
+        <!-- Modal -->
+        <div
+  class="modal fade"
+  id="modal{{ kartu._id }}"
+  tabindex="-1"
+  aria-labelledby="modalLabel{{ kartu._id }}"
+  aria-hidden="true"
+>
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                  Modal title
+                </h1>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form action="{{url_for('updateKartu', kartuId = kartu._id, kartu = idBrg)}}" method="post">
+                  <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text" id="inputGroup-sizing-sm">tanggal</span>
+                    <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="tanggal" value="{{kartu.tanggal}}" required>
+                  </div>
+                <div class="mb-3">
+                  <label for="exampleInputPassword1" class="form-label">Dari / Kepada</label>
+                  <input type="text" class="form-control" id="exampleInputPassword1" name="dk" value="{{kartu.dk}}">
+                </div>
+                <div class="mb-3">
+                    <label for="exampleInputPassword1" class="form-label">Masuk</label>
+                    <input type="number" class="form-control" id="exampleInputPassword1" name="masuk" value="{{kartu.masuk}}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleInputPassword1" class="form-label">Keluar</label>
+                    <input type="number" class="form-control" id="exampleInputPassword1" name="keluar" value="{{kartu.keluar}}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleInputPassword1" class="form-label">Sisa</label>
+                    <input type="number" class="form-control" id="exampleInputPassword1" name="sisa" value="{{kartu.sisa}}" required>
+                  </div>
+                  <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text" id="inputGroup-sizing-sm">Expire Date</span>
+                    <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="expire" value="{{kartu.expire}}" required>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Save changes
+                </button>
+              </form>
+              </div>
+            </div>
+          </div>
+        </div>
+          <button type="button" class="btn btn-danger" style="border: none; color: black; font-weight: 500;" onclick="update('{{kartu._id}}','{{kartu.kode}}')">Delete</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <h4 style="text-align: center; margin-top: 25px;">Kartu Kosong</h4>
+  {% endif %}
+  <script>
+    function update(obatId, kodebrg){
+      obatId = obatId
+      kodebrg = kodebrg
+        Swal.fire({
+    title: "Are you sure?",
+  text: "You won't be able to revert this!",
+  icon: "warning",
+  showCancelButton: true,
+  confirmButtonColor: "#3085d6",
+  cancelButtonColor: "#d33",
+  confirmButtonText: "Yes, delete it!"
+}).then((result) => {
+  if (result.isConfirmed) {
+    Swal.fire({
+      title: "Deleted!",
+      text: "Your file has been deleted.",
+      icon: "success"
+    });
+    window.location.href = "{{url_for('delete', id='idBRG', kode='kodeBRG')}}".replace('idBRG', obatId).replace('kodeBRG', kodebrg);
+  }
+});
+    }
+  </script>
+{% endblock %}
