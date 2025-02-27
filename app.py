@@ -32,110 +32,122 @@ def home():
     else:
         return redirect(url_for('index'))
 
-@app.route('/search')
-def search():
-    search_query = request.args.get("search", "").strip()  
-
-    if search_query:
-        obat_list = list(collectionObat.find({"nama_obat": {"$regex": search_query, "$options": "i"}}))
-    else:
-        obat_list = list(collectionObat.find())
-
 @app.route('/addObat', methods = ['POST'])
 def addObat():
-    nama = request.form['namaObat']
-    satuan = request.form['satuan']
-    harga = request.form['harga']
+    if "user" in session:
+        nama = request.form['namaObat']
+        satuan = request.form['satuan']
+        harga = request.form['harga']
 
-    collectionObat.insert_one({'nama':nama, 'satuan':satuan,'harga':harga})
-    msg = 'berhasil'
-    return redirect(url_for('home'))
+        collectionObat.insert_one({'nama':nama, 'satuan':satuan,'harga':harga})
+        msg = 'berhasil'
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/kartuStok/<obat_id>')
 def kartuStok(obat_id):
-    idBrg = str(obat_id)
-    kode = str(obat_id)
+    if "user" in session:
+        idBrg = str(obat_id)
+        kode = str(obat_id)
 
-    # Ambil data obat berdasarkan ID
-    data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
+        # Ambil data obat berdasarkan ID
+        data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
 
-    # Ambil data kartu stok berdasarkan kode obat
-    dataKartu = list(collectionKartu.find({'kode': kode}))
+        # Ambil data kartu stok berdasarkan kode obat
+        dataKartu = list(collectionKartu.find({'kode': kode}))
 
-    # Ambil stok terakhir dari kartu stok
-    latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
+        # Ambil stok terakhir dari kartu stok
+        latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
     
-    if latest_stok:
-        stok_terakhir = latest_stok.get("sisa", 0)
-    else:
-        stok_terakhir = "Tidak Ada Stok"
+        if latest_stok:
+            stok_terakhir = latest_stok.get("sisa", 0)
+        else:
+            stok_terakhir = "Tidak Ada Stok"
 
-    return render_template('kartuStok.html', data_obat=data, dataKartu=dataKartu, stok_terakhir=stok_terakhir, idBrg=idBrg)
+        return render_template('kartuStok.html', data_obat=data, dataKartu=dataKartu, stok_terakhir=stok_terakhir, idBrg=idBrg)
+    
+    else:
+        return redirect(url_for('index'))
 
 
 @app.route('/addKartuStok/<obat_id>', methods = ['POST'])
 def addKartuStok(obat_id):
-    kode = obat_id
-    tanggal = request.form['tanggal']
-    dk = request.form['dk']
-    masuk = request.form['masuk']
-    keluar = request.form['keluar']
-    sisa = request.form['sisa']
-    expire = request.form['expire']
+    if "user" in session:
+        kode = obat_id
+        tanggal = request.form['tanggal']
+        dk = request.form['dk']
+        masuk = request.form['masuk']
+        keluar = request.form['keluar']
+        sisa = request.form['sisa']
+        expire = request.form['expire']
 
-    today = datetime.today().date()
+        today = datetime.today().date()
 
-    tanggalConvert = datetime.strptime(tanggal,"%Y-%m-%d").date()
-    expireConvert = datetime.strptime(expire, '%Y-%m-%d').date()
+        tanggalConvert = datetime.strptime(tanggal,"%Y-%m-%d").date()
+        expireConvert = datetime.strptime(expire, '%Y-%m-%d').date()
 
-    selisih = (expireConvert - today).days
+        selisih = (expireConvert - today).days
 
-    collectionKartu.insert_one({'kode' : kode,'tanggal' : str(tanggalConvert), 'dk' : dk, 'masuk' : str(masuk), 
+        collectionKartu.insert_one({'kode' : kode,'tanggal' : str(tanggalConvert), 'dk' : dk, 'masuk' : str(masuk), 
                            'keluar' : str(keluar), 'sisa' : str(sisa), 'expire' : str(expireConvert), 'selisih' : selisih})
-    obat_id = kode
-    return redirect(url_for('kartuStok', obat_id=obat_id))
+        obat_id = kode
+        return redirect(url_for('kartuStok', obat_id=obat_id))
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/updateKartu/<kartuId>/<kartu>', methods = ['POST'])
 def updateKartu(kartuId, kartu):
-    tanggal = request.form['tanggal']
-    dk = request.form['dk']
-    masuk = request.form['masuk']
-    keluar = request.form['keluar']
-    sisa = request.form['sisa']
-    expire = request.form['expire']
-    kartu = kartu
+    if "user" in session:
+        tanggal = request.form['tanggal']
+        dk = request.form['dk']
+        masuk = request.form['masuk']
+        keluar = request.form['keluar']
+        sisa = request.form['sisa']
+        expire = request.form['expire']
+        kartu = kartu
 
-    collectionKartu.update_one(
-        {"_id": ObjectId(kartuId)},
-        {"$set": {"tanggal": tanggal, "dk": dk, "masuk": masuk, "keluar":keluar, "sisa":sisa, 'expire': expire}}
-    )
+        collectionKartu.update_one(
+            {"_id": ObjectId(kartuId)},
+            {"$set": {"tanggal": tanggal, "dk": dk, "masuk": masuk, "keluar":keluar, "sisa":sisa, 'expire': expire}}
+        )
 
-    return redirect(url_for('kartuStok', obat_id=kartu))
+        return redirect(url_for('kartuStok', obat_id=kartu))
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/updateObat/<obatId>', methods = ['POST'])
 def updateObat(obatId):
-    nama = request.form['namaObat']
-    satuan = request.form['satuan']
-    harga = request.form['harga']
+    if "user" in session:
+        nama = request.form['namaObat']
+        satuan = request.form['satuan']
+        harga = request.form['harga']
 
-    collectionObat.update_one(
-        {"_id": ObjectId(obatId)},
-        {"$set": {"nama": nama, "satuan": satuan, "harga": harga}}
-    )
+        collectionObat.update_one(
+            {"_id": ObjectId(obatId)},
+            {"$set": {"nama": nama, "satuan": satuan, "harga": harga}}
+        )
 
-    return redirect(url_for('home'))
+        return redirect(url_for('home'))
+    else:
+        return redirect(url_for('index'))
 
 @app.route("/delete/<id>/<kode>")
 def delete(id, kode):
-    collectionKartu.delete_one({"_id": ObjectId(id)})
-    kode = kode
-    return redirect(url_for("kartuStok", obat_id=kode))
+    if "user" in session:
+        collectionKartu.delete_one({"_id": ObjectId(id)})
+        kode = kode
+        return redirect(url_for("kartuStok", obat_id=kode))
+    else:
+        return redirect(url_for('index'))
 
 @app.route("/deleteObat/<id>")
 def deleteObat(id):
-    collectionObat.delete_one({"_id": ObjectId(id)})
-    collectionKartu.delete_many({"kode": id})
-    return redirect(url_for("home"))
+    if "user" in session:
+        collectionObat.delete_one({"_id": ObjectId(id)})
+        collectionKartu.delete_many({"kode": id})
+        return redirect(url_for("home"))
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
