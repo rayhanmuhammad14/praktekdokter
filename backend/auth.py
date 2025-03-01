@@ -13,5 +13,5 @@ def login(collection):
             msg = "SUKSES"
             return redirect(url_for("home"))
         else:
-            flash('Kata Sandi Slaha', 'Info')
+            flash('Kata Sandi Salah', 'Info')
     return render_template("index.html")
