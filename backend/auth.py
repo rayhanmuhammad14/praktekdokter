@@ -2,8 +2,8 @@ from flask import render_template, request, redirect, url_for, jsonify, session,
 
 def login(collection):
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
 
         user = collection.find_one({"username": username, 'password': password})
         

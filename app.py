@@ -27,7 +27,6 @@ def home():
                 obat_list = list(collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}))
             else:
                 obat_list = list(collectionObat.find())
-            data_obat = list(collectionObat.find({}))
             return render_template('home.html', obat_list=obat_list)
     else:
         return redirect(url_for('index'))
@@ -41,6 +40,7 @@ def addObat():
 
         collectionObat.insert_one({'nama':nama, 'satuan':satuan,'harga':harga})
         msg = 'berhasil'
+        return redirect(url_for('home'))
     else:
         return redirect(url_for('index'))
 
