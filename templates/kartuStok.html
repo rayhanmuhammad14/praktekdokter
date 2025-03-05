@@ -26,10 +26,7 @@
             <label for="exampleInputPassword1" class="form-label">Keluar</label>
             <input type="number" class="form-control" id="exampleInputPassword1" name="keluar" required>
           </div>
-          <div class="mb-3">
-            <label for="exampleInputPassword1" class="form-label">Sisa</label>
-            <input type="number" class="form-control" id="exampleInputPassword1" name="sisa" required>
-          </div>
+
           <div class="input-group input-group-sm mb-3">
             <span class="input-group-text" id="inputGroup-sizing-sm">Expire Date</span>
             <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="expire" required>
@@ -37,6 +34,12 @@
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
 </div>
+<br>
+<form method="POST" action="{{ url_for('kartuStok', obat_id=idBrg) }}" style="display: flex; gap: 10px; margin-bottom: 20px;">
+  <label for="month">Pilih Bulan:</label>
+  <input type="month" name="month" value="{{ selected_month if selected_month else '' }}">
+  <button type="submit" class="btn btn-success">Filter</button>
+</form>
 {% if dataKartu %}
   <table class="table" style="font-size: 10px; margin-top: 20px;">
     <thead>

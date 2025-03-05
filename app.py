@@ -7,7 +7,7 @@ from bson import ObjectId
 app = Flask(__name__, template_folder='templates')
 app.secret_key = "sulianti123"
 app.permanent_session_lifetime = timedelta(minutes=5)
-client = MongoClient("mongodb+srv://rayhan123:m5VnblcoXTtzOhUh@kartustok.lq6vs.mongodb.net/?retryWrites=true&w=majority&appName=kartuStok")
+client = MongoClient("mongodb+srv://rayhan123:kHQ56sgTV1BpgLL3@kartustok.lq6vs.mongodb.net/?retryWrites=true&w=majority&appName=kartuStok")
 db = client['kartuStok']
 collection = db['kartustok']
 collectionObat = db['obat']
@@ -44,7 +44,7 @@ def addObat():
     else:
         return redirect(url_for('index'))
 
-@app.route('/kartuStok/<obat_id>')
+@app.route('/kartuStok/<obat_id>', methods = ['POST', 'GET'])
 def kartuStok(obat_id):
     if "user" in session:
         idBrg = str(obat_id)
@@ -53,19 +53,33 @@ def kartuStok(obat_id):
         # Ambil data obat berdasarkan ID
         data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
 
-        # Ambil data kartu stok berdasarkan kode obat
-        dataKartu = list(collectionKartu.find({'kode': kode}))
+        # Ambil filter bulan & tahun dari form (jika ada)
+        month_str = str(request.form.get("month", "").strip())
+        query = {"kode": kode}
 
-        # Ambil stok terakhir dari kartu stok
+        if month_str:
+            try:
+                # Filter hanya jika user memilih bulan & tahun
+                query["tanggal"] = {"$regex": f"^{month_str}"}
+            except ValueError:
+                pass  # Abaikan jika format salah
+
+        # Ambil data kartu stok (terfilter atau tidak)
+        dataKartu = list(collectionKartu.find(query))
+
+        # Ambil stok terakhir
         latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
-    
-        if latest_stok:
-            stok_terakhir = latest_stok.get("sisa", 0)
-        else:
-            stok_terakhir = "Tidak Ada Stok"
+        stok_terakhir = latest_stok.get("sisa", 0) if latest_stok else "Tidak Ada Stok"
 
-        return render_template('kartuStok.html', data_obat=data, dataKartu=dataKartu, stok_terakhir=stok_terakhir, idBrg=idBrg)
-    
+        return render_template(
+            'kartuStok.html',
+            data_obat=data,
+            dataKartu=dataKartu,
+            stok_terakhir=stok_terakhir,
+            idBrg=idBrg,
+            selected_month=month_str  # Kirim bulan yang dipilih ke template
+        )
+
     else:
         return redirect(url_for('index'))
 
@@ -76,10 +90,10 @@ def addKartuStok(obat_id):
         kode = obat_id
         tanggal = request.form['tanggal']
         dk = request.form['dk']
-        masuk = request.form['masuk']
-        keluar = request.form['keluar']
-        sisa = request.form['sisa']
+        masuk = int(request.form['masuk'])
+        keluar = int(request.form['keluar'])
         expire = request.form['expire']
+
 
         today = datetime.today().date()
 
@@ -87,9 +101,18 @@ def addKartuStok(obat_id):
         expireConvert = datetime.strptime(expire, '%Y-%m-%d').date()
 
         selisih = (expireConvert - today).days
+            
+
+        latest_entry = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
+        if latest_entry:
+            sisa_sebelumnya = int(latest_entry["sisa"])
+            sisa_baru = sisa_sebelumnya + masuk - keluar
+        else:
+            sisa_baru = masuk
+
 
         collectionKartu.insert_one({'kode' : kode,'tanggal' : str(tanggalConvert), 'dk' : dk, 'masuk' : str(masuk), 
-                           'keluar' : str(keluar), 'sisa' : str(sisa), 'expire' : str(expireConvert), 'selisih' : selisih})
+                           'keluar' : str(keluar), 'sisa' : str(sisa_baru), 'expire' : str(expireConvert), 'selisih' : selisih})
         obat_id = kode
         return redirect(url_for('kartuStok', obat_id=obat_id))
     else:
