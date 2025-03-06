@@ -5,7 +5,7 @@
 <h5>Satuan    : {{obat.satuan}}</h4>
 <h5>Harga     : {{obat.harga}}</h4>
 {% endfor %}
-<h5>Total Stok : {{stok_terakhir}}</h5>
+<h5>Total Stok : {{stok_terkini}}</h5>
 
 <div class="formContainer" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
     <form style="width: 50%; margin-top: 20px; border: 1px solid rgba(153, 255, 0, 0.488); padding: 10px; border-radius: 8px;" method="post" action="{{url_for('addKartuStok', obat_id=idBrg)}}">
@@ -40,7 +40,7 @@
   <input type="month" name="month" value="{{ selected_month if selected_month else '' }}">
   <button type="submit" class="btn btn-success">Filter</button>
 </form>
-{% if dataKartu %}
+{% if bulan %}
   <table class="table" style="font-size: 10px; margin-top: 20px;">
     <thead>
       <tr>
@@ -113,13 +113,9 @@
                     <label for="exampleInputPassword1" class="form-label">Keluar</label>
                     <input type="number" class="form-control" id="exampleInputPassword1" name="keluar" value="{{kartu.keluar}}" required>
                   </div>
-                  <div class="mb-3">
-                    <label for="exampleInputPassword1" class="form-label">Sisa</label>
-                    <input type="number" class="form-control" id="exampleInputPassword1" name="sisa" value="{{kartu.sisa}}" required>
-                  </div>
                   <div class="input-group input-group-sm mb-3">
                     <span class="input-group-text" id="inputGroup-sizing-sm">Expire Date</span>
-                    <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="expire" value="{{kartu.expire}}" required>
+                    <input type="date" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" name="expire" value="{{ kartu.expire.strftime('%Y-%m-%d') if kartu.expire else '' }}" required>
                   </div>
               </div>
               <div class="modal-footer">
@@ -151,6 +147,8 @@
     function update(obatId, kodebrg){
       obatId = obatId
       kodebrg = kodebrg
+      console.log("ini id : " + obatId)
+      console.log("Ini kode : "+ kodebrg)
         Swal.fire({
     title: "Are you sure?",
   text: "You won't be able to revert this!",

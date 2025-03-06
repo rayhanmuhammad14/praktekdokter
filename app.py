@@ -97,7 +97,6 @@ def addObat():
         harga = request.form['harga']
 
         collectionObat.insert_one({'nama':nama, 'satuan':satuan,'harga':harga})
-        msg = 'berhasil'
         return redirect(url_for('home'))
     else:
         return redirect(url_for('index'))
@@ -107,19 +106,16 @@ def kartuStok(obat_id):
     if "user" in session:
         idBrg = str(obat_id)
         kode = str(obat_id)
-
+        query = {"kode": obat_id} 
         data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
-
-        month_str = str(request.form.get("month", "").strip())
-        query = {"kode": kode}
-
+        month_str = request.form.get("month")  
         if month_str:
             try:
                 query["tanggal"] = {"$regex": f"^{month_str}"}
             except ValueError:
-                pass  
-
-        dataKartu = list(collectionKartu.find(query))
+                pass 
+        
+        bulanFilter = list(collectionKartu.find(query))
 
         latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
         stok_terakhir = latest_stok.get("sisa", 0) if latest_stok else "Tidak Ada Stok"
@@ -147,6 +143,8 @@ def kartuStok(obat_id):
             },
             {
                 "$project": {
+                    "_id" : 1,
+                    "kode" : 1,
                     "tanggal": 1,
                     "dk": 1,
                     "masuk": 1,
@@ -159,6 +157,16 @@ def kartuStok(obat_id):
         ]
 
         dataKartu = list(collectionKartu.aggregate(pipeline))
+        #####
+        masuk = collectionKartu.find({'kode':obat_id},{"masuk": 1})
+        keluar = collectionKartu.find({'kode':obat_id},{"keluar": 1})
+        
+        total_masuk = sum(int(d.get("masuk", 0)) for d in masuk)
+        total_keluar = sum(int(d.get("keluar", 0)) for d in keluar)
+
+        stok_terkini = int(total_masuk)-int(total_keluar)
+        if stok_terkini <= 0:
+            stok_terkini = 0
 
         return render_template(
             'kartuStok.html',
@@ -166,7 +174,8 @@ def kartuStok(obat_id):
             dataKartu=dataKartu,
             stok_terakhir=stok_terakhir,
             idBrg=idBrg,
-            selected_month=month_str  # Kirim bulan yang dipilih ke template
+            bulan=bulanFilter,
+            stok_terkini=stok_terkini
         )
 
     else:
@@ -184,24 +193,13 @@ def addKartuStok(obat_id):
         expire = request.form['expire']
 
 
-        today = datetime.today().date()
-
         tanggalConvert = datetime.strptime(tanggal,"%Y-%m-%d").date()
         expireConvert = datetime.strptime(expire, '%Y-%m-%d').date()
 
-        selisih = (expireConvert - today).days
-            
-
-        latest_entry = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
-        if latest_entry:
-            sisa_sebelumnya = int(latest_entry["sisa"])
-            sisa_baru = sisa_sebelumnya + masuk - keluar
-        else:
-            sisa_baru = masuk
 
 
         collectionKartu.insert_one({'kode' : kode,'tanggal' : str(tanggalConvert), 'dk' : dk, 'masuk' : str(masuk), 
-                           'keluar' : str(keluar), 'sisa' : str(sisa_baru), 'expire' : str(expireConvert), 'selisih' : selisih})
+                           'keluar' : str(keluar), 'expire' : str(expireConvert)})
         obat_id = kode
         return redirect(url_for('kartuStok', obat_id=obat_id))
     else:
@@ -214,13 +212,12 @@ def updateKartu(kartuId, kartu):
         dk = request.form['dk']
         masuk = request.form['masuk']
         keluar = request.form['keluar']
-        sisa = request.form['sisa']
         expire = request.form['expire']
         kartu = kartu
 
         collectionKartu.update_one(
             {"_id": ObjectId(kartuId)},
-            {"$set": {"tanggal": tanggal, "dk": dk, "masuk": masuk, "keluar":keluar, "sisa":sisa, 'expire': expire}}
+            {"$set": {"tanggal": tanggal, "dk": dk, "masuk": masuk, "keluar":keluar, 'expire': expire}}
         )
 
         return redirect(url_for('kartuStok', obat_id=kartu))
