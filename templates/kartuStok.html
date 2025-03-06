@@ -49,7 +49,6 @@
         <th scope="col">Dari/Kepada</th>
         <th scope="col">Masuk</th>
         <th scope="col">Keluar</th>
-        <th scope="col">Sisa</th>  
         <th scope="col">Expire Date</th>
         <th scope="col">Expire Dalam ... hari</th>
         <th scope="col">Action</th>
@@ -63,9 +62,8 @@
         <td>{{kartu.dk}}</td>
         <td>{{kartu.masuk}}</td>
         <td>{{kartu.keluar}}</td>
-        <td>{{kartu.sisa}}</td>
-        <td>{{kartu.expire}}</td>
-        <td>{{kartu.selisih}}</td>
+        <td>{{kartu.expire.strftime("%Y-%m-%d")}}</td>
+        <td>{{kartu.selisih_hari}}</td>
         <td>
           <button
   type="button"

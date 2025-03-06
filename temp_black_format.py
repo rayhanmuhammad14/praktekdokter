@@ -19,80 +19,40 @@ def index():
 
 @app.route('/home', methods = ['GET'])
 def home():
-   if "user" in session:
-    if request.method == 'GET':
-        search_query = request.args.get("search", "").strip()
-        today = datetime.utcnow()
+    if "user" in session:
+        if request.method == 'GET':
+            search_query = request.args.get("search", "").strip() 
+            selisih = collectionKartu.find({"selisih": {"$lte": 90}}) 
+            kode_list = []
+            for doc in selisih:
+                if "kode" in doc:
+                    kode_list.append(doc["kode"]) 
+            if kode_list:
+                if isinstance(kode_list[0], str): 
+                    try:
+                        kode_list = [ObjectId(k) for k in kode_list]
+                    except:
+                        pass
 
-        # Pipeline untuk menghitung selisih hari sebelum kedaluwarsa
-        pipeline = [
-            {
-                "$addFields": {
-                    "expire": {"$toDate": "$expire"}  # Konversi string ke datetime
-                }
-            },
-            {
-                "$addFields": {
-                    "selisih_hari": {
-                        "$dateDiff": {
-                            "startDate": today,
-                            "endDate": "$expire",
-                            "unit": "day"
-                        }
-                    }
-                }
-            },
-            {
-                "$match": {
-                    "selisih_hari": {"$lte": 90}  # Filter yang kurang dari 90 hari
-                }
-            },
-            {
-                "$project": {
-                    "kode": 1,  # Ambil kode obat untuk dicocokkan di collectionObat
-                    "selisih_hari": 1
-                }
-            }
-        ]
+                nama_obat_cursor = collectionObat.find(
+                {'_id': {"$in": kode_list}}, 
+                {'nama': 1, '_id': 0}  
+                )
 
-        # Eksekusi pipeline untuk mendapatkan daftar kartu yang kedaluwarsa dalam ≤90 hari
-        dataKartu = list(collectionKartu.aggregate(pipeline))
+                nama_obat_list = [doc["nama"] for doc in nama_obat_cursor]
 
-        # Ambil semua kode obat dari kartu stok
-        kode_list = [doc["kode"] for doc in dataKartu if "kode" in doc]
+                print("Nama Obat yang Ditemukan:", nama_obat_list) 
 
-        # Pastikan kode berbentuk ObjectId jika perlu
-        if kode_list and isinstance(kode_list[0], str):
-            try:
-                kode_list = [ObjectId(k) for k in kode_list]
-            except:
-                pass
-
-        # Ambil nama obat berdasarkan kode yang ditemukan dalam kartu stok
-        nama_obat_list = []
-        if kode_list:
-            nama_obat_cursor = collectionObat.find(
-                {"_id": {"$in": kode_list}},  # Cari berdasarkan _id obat
-                {"nama": 1, "_id": 0}  # Hanya ambil nama obat
-            )
-            nama_obat_list = [doc["nama"] for doc in nama_obat_cursor]
-
-        # Tentukan pesan berdasarkan hasil pencarian obat kadaluarsa
-        if nama_obat_list:
-            div = "danger"
-            msg = f"⚠️ OBAT {', '.join(nama_obat_list)} sudah mendekati kedaluwarsa! Tolong periksa stok."
-        else:
-            div = "success"
-            msg = "✅ Semua obat aman, tidak ada yang mendekati kedaluwarsa."
-
-        # Pencarian obat berdasarkan nama
-        if search_query:
-            obat_list = list(collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}))
-        else:
-            obat_list = list(collectionObat.find())
-
-        return render_template('home.html', obat_list=obat_list, msg=msg, div=div)
-
+                div = 'danger'
+                msg = f"OBAT {', '.join(nama_obat_list)} Sudah Mau Kadaluarsa Tolong Cek"
+            else:
+                div = 'success'
+                msg = "Obat Aman Semua"
+            if search_query:
+                obat_list = list(collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}))
+            else:
+                obat_list = list(collectionObat.find())
+            return render_template('home.html', obat_list=obat_list, msg=msg, div=div)
     else:
         return redirect(url_for('index'))
 
@@ -135,42 +95,55 @@ def kartuStok(obat_id):
         # Ambil stok terakhir
         latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
         stok_terakhir = latest_stok.get("sisa", 0) if latest_stok else "Tidak Ada Stok"
+
+        expire_cursor = collectionKartu.find({'kode': obat_id}, {'expire': 1, '_id': 0})
+
+        selisih_list = []  
+        # for doc in expire_cursor:
+        #     if "expire" in doc:
+        #         expire_str = doc["expire"]
+        #         expireConvert = datetime.strptime(expire_str, '%Y-%m-%d').date()
+
+        #         selisih = (expireConvert - today).days
+        #         selisih_list.append(selisih)
         
-        today = datetime.utcnow()
+        # if not selisih_list:
+        #     selisih_list = 0
+        today = datetime.today().date().strftime('%Y-%m-%d')
         pipeline = [
-            {
-                "$match": {"kode": obat_id}
-            },
-            {
-                "$addFields": {
-                    "expire": {"$toDate": "$expire"}  # Konversi string ke datetime
-                }
-            },
-            {
-                "$addFields": {
-                    "selisih_hari": {
-                        "$dateDiff": {
-                            "startDate": today,
-                            "endDate": "$expire",
-                            "unit": "day"
-                        }
-                    }
-                }
-            },
-            {
-                "$project": {
-                    "tanggal": 1,
-                    "dk": 1,
-                    "masuk": 1,
-                    "keluar": 1,
-                    "sisa": 1,
-                    "expire": 1,
-                    "selisih_hari": 1
+    {
+        "$addFields": {
+            "selisih_hari": {
+                "$dateDiff": {
+                    "startDate": today,
+                    "endDate": {"$toDate": "$expire"},
+                    "unit": "day"
                 }
             }
-        ]
+        }
+    },
+    {
+        "$match": {
+            "selisih_hari": {"$lte": 90}  # Filter hanya yang <= 90 hari
+        }
+    },
+    {
+        "$project": {
+            "_id": 0, 
 
-        dataKartu = list(collectionKartu.aggregate(pipeline))
+            "selisih_hari": 1
+        }
+    }
+]
+
+        hasil = list(collectionKartu.aggregate(pipeline))
+
+# Cetak hasil
+        if hasil:
+            for data in hasil:
+                print(f"Kode: {data['kode']}, Expire: {data['expire']}, Sisa {data['selisih_hari']} hari lagi")
+        else:
+            print("Tidak ada obat yang mendekati kedaluwarsa")
 
         return render_template(
             'kartuStok.html',
@@ -178,7 +151,8 @@ def kartuStok(obat_id):
             dataKartu=dataKartu,
             stok_terakhir=stok_terakhir,
             idBrg=idBrg,
-            selected_month=month_str  # Kirim bulan yang dipilih ke template
+            selected_month=month_str,
+            selisih=selisih
         )
 
     else:
@@ -213,7 +187,7 @@ def addKartuStok(obat_id):
 
 
         collectionKartu.insert_one({'kode' : kode,'tanggal' : str(tanggalConvert), 'dk' : dk, 'masuk' : str(masuk), 
-                           'keluar' : str(keluar), 'sisa' : str(sisa_baru), 'expire' : str(expireConvert), 'selisih' : selisih})
+                           'keluar' : str(keluar), 'sisa' : str(sisa_baru), 'expire' : str(expireConvert)})
         obat_id = kode
         return redirect(url_for('kartuStok', obat_id=obat_id))
     else:

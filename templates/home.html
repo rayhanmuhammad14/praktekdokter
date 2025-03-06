@@ -1,4 +1,7 @@
 {% extends "base/utama.html" %} {% block content %}
+<div class="alert alert-{{div}}" role="alert">
+  {{msg}}
+</div>
 <h3 style="margin-top: 20px">Masukkan Obat Baru</h3>
 <form style="width: 50%" method="post" action="{{url_for('addObat')}}">
   <div class="mb-3">
