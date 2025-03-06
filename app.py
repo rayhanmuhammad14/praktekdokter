@@ -6,7 +6,7 @@ from bson import ObjectId
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = "sulianti123"
-app.permanent_session_lifetime = timedelta(minutes=5)
+app.permanent_session_lifetime = timedelta(days=1)
 client = MongoClient("mongodb+srv://rayhan123:kHQ56sgTV1BpgLL3@kartustok.lq6vs.mongodb.net/?retryWrites=true&w=majority&appName=kartuStok")
 db = client['kartuStok']
 collection = db['kartustok']
@@ -24,11 +24,10 @@ def home():
         search_query = request.args.get("search", "").strip()
         today = datetime.utcnow()
 
-        # Pipeline untuk menghitung selisih hari sebelum kedaluwarsa
         pipeline = [
             {
                 "$addFields": {
-                    "expire": {"$toDate": "$expire"}  # Konversi string ke datetime
+                    "expire": {"$toDate": "$expire"}  
                 }
             },
             {
@@ -44,40 +43,35 @@ def home():
             },
             {
                 "$match": {
-                    "selisih_hari": {"$lte": 90}  # Filter yang kurang dari 90 hari
+                    "selisih_hari": {"$lte": 90}  
                 }
             },
             {
                 "$project": {
-                    "kode": 1,  # Ambil kode obat untuk dicocokkan di collectionObat
+                    "kode": 1,  
                     "selisih_hari": 1
                 }
             }
         ]
 
-        # Eksekusi pipeline untuk mendapatkan daftar kartu yang kedaluwarsa dalam ≤90 hari
         dataKartu = list(collectionKartu.aggregate(pipeline))
 
-        # Ambil semua kode obat dari kartu stok
         kode_list = [doc["kode"] for doc in dataKartu if "kode" in doc]
 
-        # Pastikan kode berbentuk ObjectId jika perlu
         if kode_list and isinstance(kode_list[0], str):
             try:
                 kode_list = [ObjectId(k) for k in kode_list]
             except:
                 pass
 
-        # Ambil nama obat berdasarkan kode yang ditemukan dalam kartu stok
         nama_obat_list = []
         if kode_list:
             nama_obat_cursor = collectionObat.find(
-                {"_id": {"$in": kode_list}},  # Cari berdasarkan _id obat
-                {"nama": 1, "_id": 0}  # Hanya ambil nama obat
+                {"_id": {"$in": kode_list}},  
+                {"nama": 1, "_id": 0}  
             )
             nama_obat_list = [doc["nama"] for doc in nama_obat_cursor]
 
-        # Tentukan pesan berdasarkan hasil pencarian obat kadaluarsa
         if nama_obat_list:
             div = "danger"
             msg = f"⚠️ OBAT {', '.join(nama_obat_list)} sudah mendekati kedaluwarsa! Tolong periksa stok."
@@ -85,7 +79,6 @@ def home():
             div = "success"
             msg = "✅ Semua obat aman, tidak ada yang mendekati kedaluwarsa."
 
-        # Pencarian obat berdasarkan nama
         if search_query:
             obat_list = list(collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}))
         else:
@@ -115,24 +108,19 @@ def kartuStok(obat_id):
         idBrg = str(obat_id)
         kode = str(obat_id)
 
-        # Ambil data obat berdasarkan ID
         data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
 
-        # Ambil filter bulan & tahun dari form (jika ada)
         month_str = str(request.form.get("month", "").strip())
         query = {"kode": kode}
 
         if month_str:
             try:
-                # Filter hanya jika user memilih bulan & tahun
                 query["tanggal"] = {"$regex": f"^{month_str}"}
             except ValueError:
-                pass  # Abaikan jika format salah
+                pass  
 
-        # Ambil data kartu stok (terfilter atau tidak)
         dataKartu = list(collectionKartu.find(query))
 
-        # Ambil stok terakhir
         latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
         stok_terakhir = latest_stok.get("sisa", 0) if latest_stok else "Tidak Ada Stok"
         
@@ -143,7 +131,7 @@ def kartuStok(obat_id):
             },
             {
                 "$addFields": {
-                    "expire": {"$toDate": "$expire"}  # Konversi string ke datetime
+                    "expire": {"$toDate": "$expire"} 
                 }
             },
             {
