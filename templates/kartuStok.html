@@ -37,10 +37,10 @@
 <br>
 <form method="POST" action="{{ url_for('kartuStok', obat_id=idBrg) }}" style="display: flex; gap: 10px; margin-bottom: 20px;">
   <label for="month">Pilih Bulan:</label>
-  <input type="month" name="month" value="{{ selected_month if selected_month else '' }}">
+  <input type="month" name="month">
   <button type="submit" class="btn btn-success">Filter</button>
 </form>
-{% if bulan %}
+{% if dataKartu %}
   <table class="table" style="font-size: 10px; margin-top: 20px;">
     <thead>
       <tr>

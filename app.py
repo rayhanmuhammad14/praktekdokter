@@ -106,16 +106,8 @@ def kartuStok(obat_id):
     if "user" in session:
         idBrg = str(obat_id)
         kode = str(obat_id)
-        query = {"kode": obat_id} 
         data = list(collectionObat.find({'_id': ObjectId(obat_id)}))
-        month_str = request.form.get("month")  
-        if month_str:
-            try:
-                query["tanggal"] = {"$regex": f"^{month_str}"}
-            except ValueError:
-                pass 
-        
-        bulanFilter = list(collectionKartu.find(query))
+        month_str = str(request.form.get("month", "").strip())
 
         latest_stok = collectionKartu.find_one({'kode': kode}, {"sisa": 1}, sort=[("_id", -1)])
         stok_terakhir = latest_stok.get("sisa", 0) if latest_stok else "Tidak Ada Stok"
@@ -155,8 +147,50 @@ def kartuStok(obat_id):
                 }
             }
         ]
+        
+        pipelineF = [
+            {
+                "$match": {
+                    "kode": obat_id,
+                    "tanggal": {"$regex": f"^{month_str}"}  # Cocokkan awal string dengan YYYY-MM
+                        }
+                    },
+                    {
+                        "$addFields": {
+                            "expire": {"$toDate": "$expire"}
+                        }
+                    },
+                {
+                "$addFields": {
+                    "selisih_hari": {
+                        "$dateDiff": {
+                            "startDate": today,
+                            "endDate": "$expire",
+                            "unit": "day"
+                        }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                    "kode": 1,
+                    "tanggal": 1,
+                    "dk": 1,
+                    "masuk": 1,
+                    "keluar": 1,
+                    "sisa": 1,
+                    "expire": 1,
+                    "selisih_hari": 1
+                }
+            }
+        ]
 
-        dataKartu = list(collectionKartu.aggregate(pipeline))
+        
+        if month_str:
+            dataKartu = list(collectionKartu.aggregate(pipelineF))
+        else:
+            dataKartu = list(collectionKartu.aggregate(pipeline))
         #####
         masuk = collectionKartu.find({'kode':obat_id},{"masuk": 1})
         keluar = collectionKartu.find({'kode':obat_id},{"keluar": 1})
@@ -174,7 +208,6 @@ def kartuStok(obat_id):
             dataKartu=dataKartu,
             stok_terakhir=stok_terakhir,
             idBrg=idBrg,
-            bulan=bulanFilter,
             stok_terkini=stok_terkini
         )
 
