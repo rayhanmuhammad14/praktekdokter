@@ -23,6 +23,7 @@ def home():
     if request.method == 'GET':
         search_query = request.args.get("search", "").strip()
         today = datetime.utcnow()
+        
 
         pipeline = [
             {
@@ -78,14 +79,30 @@ def home():
         else:
             div = "success"
             msg = "✅ Semua obat aman, tidak ada yang mendekati kedaluwarsa."
-
+            
+        per_page = 100
+        page = int(request.args.get('page', 1))
+        skip = (page - 1) * per_page
         if search_query:
-            obat_list = list(collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}))
+            total_obat = collectionObat.count_documents({"nama": {"$regex": search_query, "$options": "i"}})
+            obat_cursor = collectionObat.find({"nama": {"$regex": search_query, "$options": "i"}}).skip(skip).limit(per_page)
         else:
-            obat_list = list(collectionObat.find())
-
-        return render_template('home.html', obat_list=obat_list, msg=msg, div=div)
-
+            total_obat = collectionObat.count_documents({})
+            obat_cursor = collectionObat.find().skip(skip).limit(per_page)
+            
+        obat_list = list(obat_cursor)
+        total_pages = (total_obat + per_page - 1) // per_page
+        return render_template(
+            'home.html',
+            obat_list=obat_list,
+            msg=msg,
+            div=div,
+            total_pages=total_pages,
+            current_page=page,
+            search_query=search_query,
+            page=page,
+            per_page=per_page
+        )
     else:
         return redirect(url_for('index'))
 
@@ -297,4 +314,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run('0.0.0.0',debug=True)
