@@ -1,6 +1,6 @@
 from flask import Flask, render_template, url_for, session, redirect, request
 from pymongo import MongoClient
-from backend.auth import login
+from backend.auth import login, login_required
 from datetime import timedelta, datetime
 from bson import ObjectId
 
@@ -18,6 +18,7 @@ def index():
     return login(collection)
 
 @app.route('/home', methods = ['GET'])
+@login_required
 def home():
    if "user" in session:
     if request.method == 'GET':
@@ -103,10 +104,9 @@ def home():
             page=page,
             per_page=per_page
         )
-    else:
-        return redirect(url_for('index'))
 
 @app.route('/addObat', methods = ['POST'])
+@login_required
 def addObat():
     if "user" in session:
         nama = request.form['namaObat']
@@ -115,10 +115,9 @@ def addObat():
 
         collectionObat.insert_one({'nama':nama, 'satuan':satuan,'harga':harga})
         return redirect(url_for('home'))
-    else:
-        return redirect(url_for('index'))
 
 @app.route('/kartuStok/<obat_id>', methods = ['POST', 'GET'])
+@login_required
 def kartuStok(obat_id):
     if "user" in session:
         idBrg = str(obat_id)
@@ -228,11 +227,9 @@ def kartuStok(obat_id):
             stok_terkini=stok_terkini
         )
 
-    else:
-        return redirect(url_for('index'))
-
 
 @app.route('/addKartuStok/<obat_id>', methods = ['POST'])
+@login_required
 def addKartuStok(obat_id):
     if "user" in session:
         kode = obat_id
@@ -252,10 +249,9 @@ def addKartuStok(obat_id):
                            'keluar' : str(keluar), 'expire' : str(expireConvert)})
         obat_id = kode
         return redirect(url_for('kartuStok', obat_id=obat_id))
-    else:
-        return redirect(url_for('index'))
 
 @app.route('/updateKartu/<kartuId>/<kartu>', methods = ['POST'])
+@login_required
 def updateKartu(kartuId, kartu):
     if "user" in session:
         tanggal = request.form['tanggal']
@@ -271,10 +267,9 @@ def updateKartu(kartuId, kartu):
         )
 
         return redirect(url_for('kartuStok', obat_id=kartu))
-    else:
-        return redirect(url_for('index'))
 
 @app.route('/updateObat/<obatId>', methods = ['POST'])
+@login_required
 def updateObat(obatId):
     if "user" in session:
         nama = request.form['namaObat']
@@ -287,30 +282,26 @@ def updateObat(obatId):
         )
 
         return redirect(url_for('home'))
-    else:
-        return redirect(url_for('index'))
 
 @app.route("/delete/<id>/<kode>")
+@login_required
 def delete(id, kode):
     if "user" in session:
         collectionKartu.delete_one({"_id": ObjectId(id)})
         kode = kode
         return redirect(url_for("kartuStok", obat_id=kode))
-    else:
-        return redirect(url_for('index'))
 
 @app.route("/deleteObat/<id>")
+@login_required
 def deleteObat(id):
     if "user" in session:
         collectionObat.delete_one({"_id": ObjectId(id)})
         collectionKartu.delete_many({"kode": id})
         return redirect(url_for("home"))
-    else:
-        return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    session.clear()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
